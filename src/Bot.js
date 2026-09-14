@@ -13,10 +13,9 @@ class Bot {
   async joinGuild(guildId) {
     this.guildId = guildId;
     this.status = 'requesting';
-    console.log(`📨 ${this.name} (${this.id.substring(0, 8)}) sending join request to guild ${guildId}`);
+    console.log(`📨 ${this.name} sending join request to guild ${guildId}`);
     
-    // Simulate API call to Free Fire
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     this.status = 'pending';
     return true;

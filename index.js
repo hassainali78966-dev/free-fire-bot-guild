@@ -10,42 +10,74 @@ dotenv.config();
 const app = express();
 const PORT = process.env.API_PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Initialize managers
 const botManager = new BotManager();
-const guildManager = new GuildManager(process.env.GUILD_ID);
+const guildManager = new GuildManager(process.env.GUILD_ID || '3053781077');
 
-// Simulate bot requests coming in
-const initiateBotRequests = async () => {
-  const delay = parseInt(process.env.BOT_DELAY) || 1000;
-  for (const bot of botManager.getBots()) {
-    guildManager.addPendingRequest(bot.id, bot.name);
-    await new Promise(resolve => setTimeout(resolve, delay));
+// Auto-start on server launch
+const autoStartSequence = async () => {
+  console.log('\n\n╔════════════════════════════════════════════════════════════════════════════╗');
+  console.log('║                  🔥 AUTO-STARTING BOT SYSTEM 🔥                      ║');
+  console.log('╚═══════════════���════════════════════════════════════════════════════════════╝\n');
+  
+  try {
+    // Step 1: Start all bots
+    console.log('⏱️  [STEP 1/4] Starting all 20 bots...\n');
+    await botManager.startAllBots(process.env.GUILD_ID || '3053781077');
+    await sleep(2000);
+    
+    // Step 2: Accept all requests
+    console.log('\n⏱️  [STEP 2/4] Accepting all join requests...\n');
+    const acceptedCount = guildManager.acceptAllRequests().length;
+    await sleep(1500);
+    
+    // Step 3: Form teams
+    console.log('\n⏱️  [STEP 3/4] Forming teams...\n');
+    const teams = await guildManager.formTeams();
+    await sleep(1500);
+    
+    // Step 4: Start playing
+    console.log('\n⏱️  [STEP 4/4] Starting gameplay...\n');
+    const playingTeams = await guildManager.startPlaying();
+    
+    console.log('\n╔════════════════════════════════════════════════════════════════════════════╗');
+    console.log('║                   ✅ AUTOMATION COMPLETE! ✅                          ║');
+    console.log('╚════════════════════════════════════════════════════════════════════════════╝');
+    console.log(`\n📊 SUMMARY:`);
+    console.log(`   ├─ 🤖 Bots Started: ${botManager.getBots().length}`);
+    console.log(`   ├─ ✅ Requests Accepted: ${acceptedCount}`);
+    console.log(`   ├─ 👥 Guild Members: ${guildManager.getGuildMembers().length}`);
+    console.log(`   ├─ 🏆 Teams Formed: ${teams.length}`);
+    console.log(`   └─ 🎮 Teams Playing: ${playingTeams.length}\n`);
+  } catch (error) {
+    console.error('❌ Error during auto-start:', error.message);
   }
 };
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Routes
 app.get('/', (req, res) => {
   res.json({
     message: '🔥 Free Fire Bot Guild System',
-    status: 'running',
-    guildId: process.env.GUILD_ID,
+    status: 'ACTIVE & RUNNING',
+    guildId: process.env.GUILD_ID || '3053781077',
     botsTotal: botManager.getBots().length,
     botsActive: botManager.getActiveBots().length,
+    guildMembers: guildManager.getGuildMembers().length,
     pendingRequests: guildManager.getPendingRequests().length,
-    acceptedMembers: guildManager.getAcceptedRequests().length,
     teamsFormed: guildManager.getTeams().length
   });
 });
 
-// Get guild status
 app.get('/api/guild/status', (req, res) => {
   res.json({
-    guildId: process.env.GUILD_ID,
+    guildId: process.env.GUILD_ID || '3053781077',
     totalBots: botManager.getBots().length,
     activeBots: botManager.getActiveBots().length,
     pendingRequests: guildManager.getPendingRequests().length,
@@ -56,7 +88,6 @@ app.get('/api/guild/status', (req, res) => {
   });
 });
 
-// Get all bots status
 app.get('/api/bots/status', (req, res) => {
   res.json({
     totalBots: botManager.getBots().length,
@@ -64,7 +95,6 @@ app.get('/api/bots/status', (req, res) => {
   });
 });
 
-// Get pending requests
 app.get('/api/guild/pending-requests', (req, res) => {
   res.json({
     pendingCount: guildManager.getPendingRequests().length,
@@ -72,7 +102,6 @@ app.get('/api/guild/pending-requests', (req, res) => {
   });
 });
 
-// Accept specific request
 app.post('/api/guild/accept-request', (req, res) => {
   const { botId } = req.body;
   if (!botId) {
@@ -82,7 +111,6 @@ app.post('/api/guild/accept-request', (req, res) => {
   res.json(result);
 });
 
-// Accept all pending requests
 app.post('/api/guild/accept-all-requests', (req, res) => {
   const results = guildManager.acceptAllRequests();
   res.json({
@@ -93,10 +121,9 @@ app.post('/api/guild/accept-all-requests', (req, res) => {
   });
 });
 
-// Start bot operations (send requests)
 app.post('/api/bots/start', async (req, res) => {
   try {
-    await botManager.startAllBots(process.env.GUILD_ID);
+    await botManager.startAllBots(process.env.GUILD_ID || '3053781077');
     res.json({ 
       message: `✅ All ${botManager.getBots().length} bots started!`,
       botsCount: botManager.getBots().length,
@@ -107,13 +134,11 @@ app.post('/api/bots/start', async (req, res) => {
   }
 });
 
-// Stop bot operations
 app.post('/api/bots/stop', (req, res) => {
   botManager.stopAllBots();
   res.json({ message: '⛔ All bots stopped' });
 });
 
-// Form teams from accepted members
 app.post('/api/teams/form', async (req, res) => {
   try {
     const teams = await guildManager.formTeams();
@@ -132,7 +157,6 @@ app.post('/api/teams/form', async (req, res) => {
   }
 });
 
-// Start playing
 app.post('/api/teams/play', async (req, res) => {
   try {
     const results = await guildManager.startPlaying();
@@ -146,17 +170,15 @@ app.post('/api/teams/play', async (req, res) => {
   }
 });
 
-// Get guild members
 app.get('/api/guild/members', (req, res) => {
   const members = guildManager.getGuildMembers();
   res.json({
-    guildId: process.env.GUILD_ID,
+    guildId: process.env.GUILD_ID || '3053781077',
     totalMembers: members.length,
     members: members
   });
 });
 
-// Get teams info
 app.get('/api/teams/info', (req, res) => {
   const teams = guildManager.getTeams();
   res.json({
@@ -166,32 +188,37 @@ app.get('/api/teams/info', (req, res) => {
   });
 });
 
-// Quick start: Start bots + Accept requests + Form teams + Play
 app.post('/api/quick-start', async (req, res) => {
   try {
-    console.log('\n\n═══════════════════════════════════════');
-    console.log('🚀 QUICK START: Full Guild Automation');
-    console.log('═══════════════════════════════════════\n');
+    console.log('\n\n╔════════════════════════════════════════════════════════════════════════════╗');
+    console.log('║                    🚀 QUICK START INITIATED 🚀                       ║');
+    console.log('╚════════════════════════════════════════════════════════════════════════════╝\n');
 
-    // Step 1: Start all bots
-    await botManager.startAllBots(process.env.GUILD_ID);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Step 1
+    console.log('⏱️  [STEP 1/4] Starting all 20 bots...\n');
+    await botManager.startAllBots(process.env.GUILD_ID || '3053781077');
+    await sleep(2000);
 
-    // Step 2: Accept all requests
+    // Step 2
+    console.log('\n⏱️  [STEP 2/4] Accepting all join requests...\n');
     const acceptedCount = guildManager.acceptAllRequests().length;
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await sleep(1500);
 
-    // Step 3: Form teams
+    // Step 3
+    console.log('\n⏱️  [STEP 3/4] Forming teams...\n');
     const teams = await guildManager.formTeams();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await sleep(1500);
 
-    // Step 4: Start playing
+    // Step 4
+    console.log('\n⏱️  [STEP 4/4] Starting gameplay...\n');
     const playingTeams = await guildManager.startPlaying();
 
-    console.log('═══════════════════════════════════════\n');
+    console.log('\n╔════════════════════════════════════════════════════════════════════════════╗');
+    console.log('║                   ✅ AUTOMATION COMPLETE! ✅                          ║');
+    console.log('╚════════════════════════════════════════════════════════════════════════════\n');
 
     res.json({
-      message: '🎮 Full automation complete!',
+      message: '✅ Full automation complete!',
       steps: {
         botsStarted: botManager.getBots().length,
         requestsAccepted: acceptedCount,
@@ -210,41 +237,31 @@ app.post('/api/quick-start', async (req, res) => {
   }
 });
 
-// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal server error', message: err.message });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`\n╔════════════════════════════════════════╗`);
-  console.log(`║  🔥 Free Fire Bot Guild System 🔥     ║`);
-  console.log(`╚════════════════════════════════════════╝\n`);
-  console.log(`📍 Guild ID:        ${process.env.GUILD_ID}`);
+app.listen(PORT, async () => {
+  console.log(`\n╔════════════════════════════════════════════════════════════════════════════╗`);
+  console.log(`║               🔥 Free Fire Bot Guild System 🔥                       ║`);
+  console.log(`╚════════════════════════════════════════════════════════════════════════════╝\n`);
+  console.log(`✅ Server running on http://localhost:${PORT}\n`);
+  console.log(`📍 Guild ID:        ${process.env.GUILD_ID || '3053781077'}`);
   console.log(`🤖 Total Bots:      ${botManager.getBots().length}`);
   console.log(`👥 Team Size:       ${process.env.TEAM_SIZE || 4} players`);
-  console.log(`🌐 Server Port:     ${PORT}`);
-  console.log(`\n📋 API Endpoints:\n`);
-  console.log(`  🏠 GET  /                              - Server status`);
-  console.log(`  📊 GET  /api/guild/status              - Guild overview`);
-  console.log(`  🤖 GET  /api/bots/status               - All bots info`);
-  console.log(`  📨 GET  /api/guild/pending-requests    - Pending join requests`);
-  console.log(`  👥 GET  /api/guild/members            - Guild members`);
-  console.log(`  🎯 GET  /api/teams/info                - Teams information`);
-  console.log(`  `);
-  console.log(`  ▶️  POST /api/bots/start                - Start all bots (send requests)`);
-  console.log(`  ✅ POST /api/guild/accept-all-requests - Accept all pending requests`);
-  console.log(`  👥 POST /api/teams/form                - Form teams from members`);
-  console.log(`  🎮 POST /api/teams/play                - Start playing`);
-  console.log(`  ⚡ POST /api/quick-start               - Full automation (1-4 in sequence)`);
-  console.log(`\n\n🎯 Quick Start Guide:\n`);
-  console.log(`  1. POST http://localhost:${PORT}/api/quick-start`);
-  console.log(`  OR follow manual steps:`);
-  console.log(`  2. POST http://localhost:${PORT}/api/bots/start`);
-  console.log(`  3. POST http://localhost:${PORT}/api/guild/accept-all-requests`);
-  console.log(`  4. POST http://localhost:${PORT}/api/teams/form`);
-  console.log(`  5. POST http://localhost:${PORT}/api/teams/play\n`);
+  console.log(`\n⚡ QUICK START:\n`);
+  console.log(`   curl -X POST http://localhost:${PORT}/api/quick-start\n`);
+  console.log(`   This will automatically:`);
+  console.log(`   1. Start all 20 bots`);
+  console.log(`   2. Accept all guild requests`);
+  console.log(`   3. Form 5 teams (4 players each)`);
+  console.log(`   4. Start all teams playing\n`);
+
+  // Auto-start after 2 seconds
+  console.log(`⏳ Auto-starting in 2 seconds...\n`);
+  await sleep(2000);
+  await autoStartSequence();
 });
 
 module.exports = app;

@@ -8,7 +8,7 @@ class GuildManager {
     this.acceptedRequests = [];
     this.teams = [];
     this.teamSize = parseInt(process.env.TEAM_SIZE) || 4;
-    console.log(`🏰 Guild Manager initialized for guild ${guildId}`);
+    console.log(`🏰 Guild Manager initialized for guild ${guildId}\n`);
   }
 
   addPendingRequest(botId, botName) {
@@ -18,7 +18,6 @@ class GuildManager {
       timestamp: new Date(),
       status: 'pending'
     });
-    console.log(`📥 New request from ${botName} (${botId.substring(0, 8)}) - Total pending: ${this.pendingRequests.length}`);
     return true;
   }
 
@@ -34,7 +33,6 @@ class GuildManager {
     this.acceptedRequests.push(request);
     this.members.push({ botId, botName: request.botName });
     
-    console.log(`✅ ${request.botName} accepted - Total members: ${this.members.length}`);
     return { success: true, botName: request.botName, totalMembers: this.members.length };
   }
 
@@ -47,8 +45,8 @@ class GuildManager {
       results.push(request);
     }
     
-    console.log(`\n🎉 All ${results.length} requests accepted!`);
-    console.log(`👥 Total guild members: ${this.members.length}`);
+    console.log(`✅ Accepted ${results.length} requests`);
+    console.log(`👥 Total guild members: ${this.members.length}\n`);
     return results;
   }
 
@@ -62,7 +60,7 @@ class GuildManager {
     const members = [...this.members];
     let teamNumber = 1;
 
-    console.log(`\n👥 Forming teams with ${this.teamSize} members each...`);
+    console.log(`👥 Forming teams with ${this.teamSize} members each...\n`);
 
     for (let i = 0; i < members.length; i += this.teamSize) {
       const teamMembers = members.slice(i, i + this.teamSize);
@@ -75,7 +73,7 @@ class GuildManager {
           createdAt: new Date()
         };
         this.teams.push(team);
-        console.log(`  🎯 Team ${teamNumber}: ${teamMembers.map(m => m.botName).join(', ')}`);
+        console.log(`  🏆 Team ${teamNumber}: ${teamMembers.map(m => m.botName).join(', ')}`);
         teamNumber++;
       }
     }
@@ -90,13 +88,13 @@ class GuildManager {
       return [];
     }
 
-    console.log(`\n🎮 Starting gameplay for ${this.teams.length} teams...`);
+    console.log(`🎮 Starting gameplay for ${this.teams.length} teams...\n`);
     const results = [];
 
     for (const team of this.teams) {
       team.status = 'playing';
       team.startedAt = new Date();
-      console.log(`  🚀 Team ${team.teamNumber} started playing (${team.members.length} players)`);
+      console.log(`  ▶️  Team ${team.teamNumber} started playing (${team.members.length} players)`);
       results.push({
         teamNumber: team.teamNumber,
         teamId: team.id,

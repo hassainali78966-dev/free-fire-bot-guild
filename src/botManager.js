@@ -17,15 +17,15 @@ class BotManager {
   }
 
   async startAllBots(guildId) {
-    console.log(`\n🚀 Starting all ${this.bots.length} bots...`);
-    const delay = parseInt(process.env.BOT_DELAY) || 1000;
+    console.log(`🚀 Starting all ${this.bots.length} bots...\n`);
+    const delay = parseInt(process.env.BOT_DELAY) || 500;
     
     for (const bot of this.bots) {
       await bot.joinGuild(guildId);
       await this.sleep(delay);
     }
     
-    console.log(`✅ All ${this.bots.length} bots sent requests to guild ${guildId}`);
+    console.log(`\n✅ All ${this.bots.length} bots sent requests to guild ${guildId}`);
     return this.bots;
   }
 
